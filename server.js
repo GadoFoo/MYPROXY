@@ -1,26 +1,30 @@
-const express = require("express");
-const fetch = require("node-fetch");
-const cors = require("cors");
+import express from "express";
+import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const PORT = process.env.PORT || 3000;
+
+// ✅ Allow all origins (you can restrict to your Netlify domain later)
+app.use(cors({ origin: "*" }));
 
 app.get("/search", async (req, res) => {
-  const query = req.query.q;
-  if (!query) return res.status(400).json({ error: "Missing query" });
-
   try {
-    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&skip_disambig=1`;
+    const q = req.query.q;
+    if (!q) return res.status(400).json({ error: "Missing query parameter" });
+
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_redirect=1&no_html=1`;
     const response = await fetch(url);
     const data = await response.json();
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch search results" });
+    console.error("Error fetching search results:", err);
+    res.status(500).json({ error: "Failed to fetch results" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
